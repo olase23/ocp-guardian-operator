@@ -1,0 +1,575 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: ocp-guardian-operator
+  annotations:
+    openshift.io/display-name: "OCP Guardian Operator"
+    description: >-
+      Deploys the OCP Guardian Operator including CRDs, RBAC and controller
+      Deployment. Install once per cluster, then use the individual Monitor
+      templates to activate monitoring.
+    tags: "monitoring,security,operator"
+    iconClass: "pficon-security"
+  labels:
+    app.kubernetes.io/name: ocp-guardian-operator
+    app.kubernetes.io/part-of: ocp-guardian
+
+parameters:
+- name: NAMESPACE
+  displayName: Operator Namespace
+  description: Namespace where the operator will be deployed.
+  value: ocp-guardian
+  required: true
+- name: IMAGE
+  displayName: Operator Image
+  description: Full image reference for the operator (internal registry recommended).
+  value: image-registry.openshift-image-registry.svc:5000/ocp-guardian/ocp-guardian-operator:0.0.1
+  required: true
+- name: REPLICAS
+  displayName: Replicas
+  description: Number of operator replicas (1 with leader-election is recommended).
+  value: "1"
+  required: true
+- name: CPU_REQUEST
+  displayName: CPU Request
+  value: "10m"
+- name: MEMORY_REQUEST
+  displayName: Memory Request
+  value: "128Mi"
+- name: CPU_LIMIT
+  displayName: CPU Limit
+  value: "500m"
+- name: MEMORY_LIMIT
+  displayName: Memory Limit
+  value: "256Mi"
+
+objects:
+
+# ============================================================
+# CRD: RBACDriftMonitor
+# ============================================================
+- apiVersion: apiextensions.k8s.io/v1
+  kind: CustomResourceDefinition
+  metadata:
+    name: rbacdriftmonitors.monitoring.ocp-guardian.io
+    labels:
+      app.kubernetes.io/name: ocp-guardian-operator
+  spec:
+    group: monitoring.ocp-guardian.io
+    names:
+      kind: RBACDriftMonitor
+      listKind: RBACDriftMonitorList
+      plural: rbacdriftmonitors
+      singular: rbacdriftmonitor
+      shortNames:
+      - rdm
+    scope: Cluster
+    versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+      - name: Drift Count
+        type: integer
+        jsonPath: .status.driftCount
+      - name: Last Check
+        type: date
+        jsonPath: .status.lastCheckTime
+      - name: Age
+        type: date
+        jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required: [baseline]
+              properties:
+                baseline:
+                  type: object
+                  properties:
+                    clusterRoles:
+                      type: array
+                      items:
+                        type: object
+                        required: [name, rules]
+                        properties:
+                          name:
+                            type: string
+                          rules:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                apiGroups:
+                                  type: array
+                                  items: {type: string}
+                                resources:
+                                  type: array
+                                  items: {type: string}
+                                verbs:
+                                  type: array
+                                  items: {type: string}
+                                resourceNames:
+                                  type: array
+                                  items: {type: string}
+                                nonResourceURLs:
+                                  type: array
+                                  items: {type: string}
+                    clusterRoleBindings:
+                      type: array
+                      items:
+                        type: object
+                        required: [name, roleRef, subjects]
+                        properties:
+                          name:
+                            type: string
+                          roleRef:
+                            type: object
+                            properties:
+                              apiGroup: {type: string}
+                              kind: {type: string}
+                              name: {type: string}
+                          subjects:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                apiGroup: {type: string}
+                                kind: {type: string}
+                                name: {type: string}
+                                namespace: {type: string}
+                    roles:
+                      type: array
+                      items:
+                        type: object
+                        required: [name, namespace, rules]
+                        properties:
+                          name: {type: string}
+                          namespace: {type: string}
+                          rules:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                apiGroups:
+                                  type: array
+                                  items: {type: string}
+                                resources:
+                                  type: array
+                                  items: {type: string}
+                                verbs:
+                                  type: array
+                                  items: {type: string}
+                                resourceNames:
+                                  type: array
+                                  items: {type: string}
+                                nonResourceURLs:
+                                  type: array
+                                  items: {type: string}
+                    roleBindings:
+                      type: array
+                      items:
+                        type: object
+                        required: [name, namespace, roleRef, subjects]
+                        properties:
+                          name: {type: string}
+                          namespace: {type: string}
+                          roleRef:
+                            type: object
+                            properties:
+                              apiGroup: {type: string}
+                              kind: {type: string}
+                              name: {type: string}
+                          subjects:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                apiGroup: {type: string}
+                                kind: {type: string}
+                                name: {type: string}
+                                namespace: {type: string}
+                checkIntervalMinutes:
+                  type: integer
+                  minimum: 1
+                  default: 5
+                severity:
+                  type: string
+                  enum: [Warning, Critical]
+                  default: Warning
+                suspend:
+                  type: boolean
+                  default: false
+            status:
+              type: object
+              properties:
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type: {type: string}
+                      status: {type: string}
+                      reason: {type: string}
+                      message: {type: string}
+                      lastTransitionTime: {type: string, format: date-time}
+                      observedGeneration: {type: integer}
+                driftItems:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      resourceKind: {type: string}
+                      resourceName: {type: string}
+                      namespace: {type: string}
+                      driftType: {type: string}
+                      message: {type: string}
+                      detectedAt: {type: string, format: date-time}
+                lastCheckTime: {type: string, format: date-time}
+                driftCount: {type: integer}
+                observedGeneration: {type: integer}
+
+# ============================================================
+# CRD: CertificateExpiryMonitor
+# ============================================================
+- apiVersion: apiextensions.k8s.io/v1
+  kind: CustomResourceDefinition
+  metadata:
+    name: certificateexpirymonitors.monitoring.ocp-guardian.io
+    labels:
+      app.kubernetes.io/name: ocp-guardian-operator
+  spec:
+    group: monitoring.ocp-guardian.io
+    names:
+      kind: CertificateExpiryMonitor
+      listKind: CertificateExpiryMonitorList
+      plural: certificateexpirymonitors
+      singular: certificateexpirymonitor
+      shortNames:
+      - cem
+    scope: Cluster
+    versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+      - name: Expiring
+        type: integer
+        jsonPath: .status.expiringCount
+      - name: Expired
+        type: integer
+        jsonPath: .status.expiredCount
+      - name: Total Scanned
+        type: integer
+        jsonPath: .status.totalCertificatesScanned
+      - name: Last Scan
+        type: date
+        jsonPath: .status.lastScanTime
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                warningThresholdDays:
+                  type: integer
+                  minimum: 1
+                  default: 30
+                criticalThresholdDays:
+                  type: integer
+                  minimum: 1
+                  default: 7
+                checkIntervalMinutes:
+                  type: integer
+                  minimum: 1
+                  default: 60
+                namespaceSelector:
+                  type: object
+                  properties:
+                    matchLabels:
+                      type: object
+                      additionalProperties: {type: string}
+                    matchExpressions:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          key: {type: string}
+                          operator: {type: string}
+                          values:
+                            type: array
+                            items: {type: string}
+                excludeNamespaces:
+                  type: array
+                  items: {type: string}
+                suspend:
+                  type: boolean
+                  default: false
+            status:
+              type: object
+              properties:
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type: {type: string}
+                      status: {type: string}
+                      reason: {type: string}
+                      message: {type: string}
+                      lastTransitionTime: {type: string, format: date-time}
+                      observedGeneration: {type: integer}
+                expiringCertificates:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      secretName: {type: string}
+                      namespace: {type: string}
+                      subject: {type: string}
+                      issuer: {type: string}
+                      expiryDate: {type: string, format: date-time}
+                      daysUntilExpiry: {type: integer}
+                      severity: {type: string}
+                totalCertificatesScanned: {type: integer}
+                expiringCount: {type: integer}
+                expiredCount: {type: integer}
+                lastScanTime: {type: string, format: date-time}
+                observedGeneration: {type: integer}
+
+# ============================================================
+# CRD: ClusterDegradationMonitor
+# ============================================================
+- apiVersion: apiextensions.k8s.io/v1
+  kind: CustomResourceDefinition
+  metadata:
+    name: clusterdegradationmonitors.monitoring.ocp-guardian.io
+    labels:
+      app.kubernetes.io/name: ocp-guardian-operator
+  spec:
+    group: monitoring.ocp-guardian.io
+    names:
+      kind: ClusterDegradationMonitor
+      listKind: ClusterDegradationMonitorList
+      plural: clusterdegradationmonitors
+      singular: clusterdegradationmonitor
+      shortNames:
+      - cdm
+    scope: Cluster
+    versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+      - name: Health
+        type: string
+        jsonPath: .status.overallHealth
+      - name: Degraded
+        type: integer
+        jsonPath: .status.degradedOperatorCount
+      - name: Unavailable
+        type: integer
+        jsonPath: .status.unavailableOperatorCount
+      - name: Last Check
+        type: date
+        jsonPath: .status.lastCorrelationTime
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                checkIntervalMinutes:
+                  type: integer
+                  minimum: 1
+                  default: 2
+                degradedThreshold:
+                  type: integer
+                  minimum: 1
+                  default: 3
+                operatorFilter:
+                  type: array
+                  items: {type: string}
+                suspend:
+                  type: boolean
+                  default: false
+            status:
+              type: object
+              properties:
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type: {type: string}
+                      status: {type: string}
+                      reason: {type: string}
+                      message: {type: string}
+                      lastTransitionTime: {type: string, format: date-time}
+                      observedGeneration: {type: integer}
+                clusterOperators:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name: {type: string}
+                      available: {type: boolean}
+                      degraded: {type: boolean}
+                      progressing: {type: boolean}
+                      message: {type: string}
+                      version: {type: string}
+                      lastTransitionTime: {type: string, format: date-time}
+                degradedOperatorCount: {type: integer}
+                unavailableOperatorCount: {type: integer}
+                progressingOperatorCount: {type: integer}
+                overallHealth: {type: string}
+                lastCorrelationTime: {type: string, format: date-time}
+                observedGeneration: {type: integer}
+
+# ============================================================
+# ServiceAccount
+# ============================================================
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: ocp-guardian-controller-manager
+    namespace: ${NAMESPACE}
+    labels:
+      app.kubernetes.io/name: ocp-guardian-operator
+
+# ============================================================
+# ClusterRole
+# ============================================================
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    name: ocp-guardian-manager-role
+    labels:
+      app.kubernetes.io/name: ocp-guardian-operator
+  rules:
+  - apiGroups: ["monitoring.ocp-guardian.io"]
+    resources:
+    - rbacdriftmonitors
+    - certificateexpirymonitors
+    - clusterdegradationmonitors
+    verbs: ["create","delete","get","list","patch","update","watch"]
+  - apiGroups: ["monitoring.ocp-guardian.io"]
+    resources:
+    - rbacdriftmonitors/finalizers
+    - certificateexpirymonitors/finalizers
+    - clusterdegradationmonitors/finalizers
+    verbs: ["update"]
+  - apiGroups: ["monitoring.ocp-guardian.io"]
+    resources:
+    - rbacdriftmonitors/status
+    - certificateexpirymonitors/status
+    - clusterdegradationmonitors/status
+    verbs: ["get","patch","update"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles","clusterrolebindings","roles","rolebindings"]
+    verbs: ["get","list","watch"]
+  - apiGroups: [""]
+    resources: ["secrets","namespaces"]
+    verbs: ["get","list","watch"]
+  - apiGroups: ["config.openshift.io"]
+    resources: ["clusteroperators"]
+    verbs: ["get","list","watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create","patch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get","list","watch","create","update","patch","delete"]
+
+# ============================================================
+# ClusterRoleBinding
+# ============================================================
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    name: ocp-guardian-manager-rolebinding
+    labels:
+      app.kubernetes.io/name: ocp-guardian-operator
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: ocp-guardian-manager-role
+  subjects:
+  - kind: ServiceAccount
+    name: ocp-guardian-controller-manager
+    namespace: ${NAMESPACE}
+
+# ============================================================
+# Deployment
+# ============================================================
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ocp-guardian-controller-manager
+    namespace: ${NAMESPACE}
+    labels:
+      control-plane: controller-manager
+      app.kubernetes.io/name: ocp-guardian-operator
+  spec:
+    selector:
+      matchLabels:
+        control-plane: controller-manager
+    replicas: "${{REPLICAS}}"
+    template:
+      metadata:
+        annotations:
+          kubectl.kubernetes.io/default-container: manager
+        labels:
+          control-plane: controller-manager
+      spec:
+        securityContext:
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        serviceAccountName: ocp-guardian-controller-manager
+        containers:
+        - name: manager
+          image: ${IMAGE}
+          command: ["/manager"]
+          args:
+          - --leader-elect
+          - --health-probe-bind-address=:8081
+          - --metrics-bind-address=:8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+          - containerPort: 8080
+            name: metrics
+            protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: ${CPU_LIMIT}
+              memory: ${MEMORY_LIMIT}
+            requests:
+              cpu: ${CPU_REQUEST}
+              memory: ${MEMORY_REQUEST}
+        terminationGracePeriodSeconds: 10

@@ -1,0 +1,37 @@
+domain: ocp-guardian.io
+layout:
+- go.kubebuilder.io/v4
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: ocp-guardian-operator
+repo: github.com/ocp-guardian/ocp-guardian-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: false
+  controller: true
+  domain: ocp-guardian.io
+  group: monitoring
+  kind: RBACDriftMonitor
+  path: github.com/ocp-guardian/ocp-guardian-operator/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: false
+  controller: true
+  domain: ocp-guardian.io
+  group: monitoring
+  kind: CertificateExpiryMonitor
+  path: github.com/ocp-guardian/ocp-guardian-operator/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: false
+  controller: true
+  domain: ocp-guardian.io
+  group: monitoring
+  kind: ClusterDegradationMonitor
+  path: github.com/ocp-guardian/ocp-guardian-operator/api/v1alpha1
+  version: v1alpha1
+version: "3"

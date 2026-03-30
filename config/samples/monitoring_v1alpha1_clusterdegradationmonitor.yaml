@@ -1,0 +1,9 @@
+apiVersion: monitoring.ocp-guardian.io/v1alpha1
+kind: ClusterDegradationMonitor
+metadata:
+  name: clusterdegradationmonitor-sample
+spec:
+  checkIntervalMinutes: 2
+  degradedThreshold: 3
+  suspend: false
+  operatorFilter: []

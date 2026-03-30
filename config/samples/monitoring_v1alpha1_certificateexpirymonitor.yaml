@@ -1,0 +1,11 @@
+apiVersion: monitoring.ocp-guardian.io/v1alpha1
+kind: CertificateExpiryMonitor
+metadata:
+  name: certificateexpirymonitor-sample
+spec:
+  warningThresholdDays: 30
+  criticalThresholdDays: 7
+  checkIntervalMinutes: 60
+  suspend: false
+  excludeNamespaces:
+  - kube-system

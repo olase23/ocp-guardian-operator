@@ -1,0 +1,54 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: ocp-guardian-cluster-degradation-monitor
+  annotations:
+    openshift.io/display-name: "OCP Guardian - Cluster Degradation Monitor"
+    description: >-
+      Creates a ClusterDegradationMonitor instance that watches OpenShift
+      ClusterOperators and correlates degraded/unavailable conditions into
+      a unified cluster health view. Requires the OCP Guardian Operator to
+      be installed first.
+    tags: "monitoring,openshift,health"
+    iconClass: "pficon-topology"
+  labels:
+    app.kubernetes.io/name: ocp-guardian-operator
+    app.kubernetes.io/component: cluster-degradation-monitor
+
+parameters:
+- name: MONITOR_NAME
+  displayName: Monitor Name
+  description: Name of the ClusterDegradationMonitor CR.
+  value: cluster-degradation-monitor
+  required: true
+- name: CHECK_INTERVAL
+  displayName: Check Interval (Minutes)
+  description: How often to check ClusterOperator status.
+  value: "2"
+  required: true
+- name: DEGRADED_THRESHOLD
+  displayName: Degraded Threshold
+  description: >-
+    Number of degraded ClusterOperators that triggers Critical overall health.
+  value: "3"
+  required: true
+- name: OPERATOR_FILTER
+  displayName: Operator Filter
+  description: >-
+    Comma-separated list of ClusterOperator names to monitor.
+    Leave empty to monitor all.
+  value: ""
+
+objects:
+- apiVersion: monitoring.ocp-guardian.io/v1alpha1
+  kind: ClusterDegradationMonitor
+  metadata:
+    name: ${MONITOR_NAME}
+    labels:
+      app.kubernetes.io/name: ocp-guardian-operator
+      app.kubernetes.io/component: cluster-degradation-monitor
+  spec:
+    checkIntervalMinutes: "${{CHECK_INTERVAL}}"
+    degradedThreshold: "${{DEGRADED_THRESHOLD}}"
+    suspend: false
+    operatorFilter: []

@@ -1,0 +1,73 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - config.openshift.io
+  resources:
+  - clusteroperators
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - monitoring.ocp-guardian.io
+  resources:
+  - certificateexpirymonitors
+  - clusterdegradationmonitors
+  - rbacdriftmonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.ocp-guardian.io
+  resources:
+  - certificateexpirymonitors/finalizers
+  - clusterdegradationmonitors/finalizers
+  - rbacdriftmonitors/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - monitoring.ocp-guardian.io
+  resources:
+  - certificateexpirymonitors/status
+  - clusterdegradationmonitors/status
+  - rbacdriftmonitors/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - get
+  - list
+  - watch

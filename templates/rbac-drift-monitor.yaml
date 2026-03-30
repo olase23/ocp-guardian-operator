@@ -1,0 +1,70 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: ocp-guardian-rbac-drift-monitor
+  annotations:
+    openshift.io/display-name: "OCP Guardian - RBAC Drift Monitor"
+    description: >-
+      Creates an RBACDriftMonitor instance that watches ClusterRoles,
+      ClusterRoleBindings, Roles and RoleBindings for unauthorized changes
+      against a defined baseline. Requires the OCP Guardian Operator to be
+      installed first.
+    tags: "monitoring,security,rbac"
+    iconClass: "pficon-security"
+  labels:
+    app.kubernetes.io/name: ocp-guardian-operator
+    app.kubernetes.io/component: rbac-drift-monitor
+
+parameters:
+- name: MONITOR_NAME
+  displayName: Monitor Name
+  description: Name of the RBACDriftMonitor CR.
+  value: rbac-drift-monitor
+  required: true
+- name: CHECK_INTERVAL
+  displayName: Check Interval (Minutes)
+  description: How often to recheck for RBAC drift.
+  value: "5"
+  required: true
+- name: SEVERITY
+  displayName: Severity
+  description: Event severity when drift is detected (Warning or Critical).
+  value: Warning
+  required: true
+- name: BASELINE_CLUSTERROLE
+  displayName: Baseline ClusterRole Name
+  description: Name of the ClusterRole to monitor (e.g. cluster-admin).
+  value: cluster-admin
+  required: true
+
+objects:
+- apiVersion: monitoring.ocp-guardian.io/v1alpha1
+  kind: RBACDriftMonitor
+  metadata:
+    name: ${MONITOR_NAME}
+    labels:
+      app.kubernetes.io/name: ocp-guardian-operator
+      app.kubernetes.io/component: rbac-drift-monitor
+  spec:
+    checkIntervalMinutes: "${{CHECK_INTERVAL}}"
+    severity: ${SEVERITY}
+    suspend: false
+    baseline:
+      clusterRoles:
+      - name: ${BASELINE_CLUSTERROLE}
+        rules:
+        - apiGroups: ["*"]
+          resources: ["*"]
+          verbs: ["*"]
+        - nonResourceURLs: ["*"]
+          verbs: ["*"]
+      clusterRoleBindings:
+      - name: ${BASELINE_CLUSTERROLE}
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: ${BASELINE_CLUSTERROLE}
+        subjects:
+        - apiGroup: rbac.authorization.k8s.io
+          kind: Group
+          name: system:masters

@@ -1,0 +1,55 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: ocp-guardian-certificate-expiry-monitor
+  annotations:
+    openshift.io/display-name: "OCP Guardian - Certificate Expiry Monitor"
+    description: >-
+      Creates a CertificateExpiryMonitor instance that scans TLS Secrets
+      cluster-wide and alerts when certificates are expiring or expired.
+      Requires the OCP Guardian Operator to be installed first.
+    tags: "monitoring,security,certificates"
+    iconClass: "pficon-security"
+  labels:
+    app.kubernetes.io/name: ocp-guardian-operator
+    app.kubernetes.io/component: certificate-expiry-monitor
+
+parameters:
+- name: MONITOR_NAME
+  displayName: Monitor Name
+  description: Name of the CertificateExpiryMonitor CR.
+  value: certificate-expiry-monitor
+  required: true
+- name: WARNING_DAYS
+  displayName: Warning Threshold (Days)
+  description: Days before expiry to raise a warning.
+  value: "30"
+  required: true
+- name: CRITICAL_DAYS
+  displayName: Critical Threshold (Days)
+  description: Days before expiry to raise a critical alert.
+  value: "7"
+  required: true
+- name: CHECK_INTERVAL
+  displayName: Check Interval (Minutes)
+  description: How often to scan for expiring certificates.
+  value: "60"
+  required: true
+- name: EXCLUDE_NAMESPACES
+  displayName: Exclude Namespaces
+  description: Comma-separated list of namespaces to skip (leave empty for none).
+  value: ""
+
+objects:
+- apiVersion: monitoring.ocp-guardian.io/v1alpha1
+  kind: CertificateExpiryMonitor
+  metadata:
+    name: ${MONITOR_NAME}
+    labels:
+      app.kubernetes.io/name: ocp-guardian-operator
+      app.kubernetes.io/component: certificate-expiry-monitor
+  spec:
+    warningThresholdDays: "${{WARNING_DAYS}}"
+    criticalThresholdDays: "${{CRITICAL_DAYS}}"
+    checkIntervalMinutes: "${{CHECK_INTERVAL}}"
+    suspend: false

@@ -1,0 +1,4 @@
+resources:
+- bases/monitoring.ocp-guardian.io_rbacdriftmonitors.yaml
+- bases/monitoring.ocp-guardian.io_certificateexpirymonitors.yaml
+- bases/monitoring.ocp-guardian.io_clusterdegradationmonitors.yaml

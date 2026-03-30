@@ -1,0 +1,27 @@
+apiVersion: monitoring.ocp-guardian.io/v1alpha1
+kind: RBACDriftMonitor
+metadata:
+  name: rbacdriftmonitor-sample
+spec:
+  checkIntervalMinutes: 5
+  severity: Warning
+  suspend: false
+  baseline:
+    clusterRoles:
+    - name: cluster-admin
+      rules:
+      - apiGroups: ["*"]
+        resources: ["*"]
+        verbs: ["*"]
+      - nonResourceURLs: ["*"]
+        verbs: ["*"]
+    clusterRoleBindings:
+    - name: cluster-admin
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: cluster-admin
+      subjects:
+      - apiGroup: rbac.authorization.k8s.io
+        kind: Group
+        name: system:masters

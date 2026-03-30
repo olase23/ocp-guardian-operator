@@ -1,0 +1,11 @@
+namespace: ocp-guardian-system
+
+namePrefix: ocp-guardian-
+
+resources:
+- ../crd
+- ../rbac
+- ../manager
+
+patches:
+- path: manager_config_patch.yaml
