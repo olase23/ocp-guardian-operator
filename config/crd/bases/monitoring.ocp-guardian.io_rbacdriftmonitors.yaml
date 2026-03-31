@@ -11,6 +11,8 @@ spec:
     kind: RBACDriftMonitor
     listKind: RBACDriftMonitorList
     plural: rbacdriftmonitors
+    shortNames:
+    - rdm
     singular: rbacdriftmonitor
   scope: Cluster
   versions:

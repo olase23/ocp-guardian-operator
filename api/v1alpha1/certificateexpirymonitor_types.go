@@ -101,7 +101,7 @@ type CertificateExpiryMonitorStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Cluster,shortName=cem
 // +kubebuilder:printcolumn:name="Expiring",type=integer,JSONPath=`.status.expiringCount`
 // +kubebuilder:printcolumn:name="Expired",type=integer,JSONPath=`.status.expiredCount`
 // +kubebuilder:printcolumn:name="Total Scanned",type=integer,JSONPath=`.status.totalCertificatesScanned`

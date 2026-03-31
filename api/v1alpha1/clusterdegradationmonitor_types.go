@@ -95,7 +95,7 @@ type ClusterDegradationMonitorStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Cluster,shortName=cdm
 // +kubebuilder:printcolumn:name="Health",type=string,JSONPath=`.status.overallHealth`
 // +kubebuilder:printcolumn:name="Degraded",type=integer,JSONPath=`.status.degradedOperatorCount`
 // +kubebuilder:printcolumn:name="Unavailable",type=integer,JSONPath=`.status.unavailableOperatorCount`

@@ -11,6 +11,8 @@ spec:
     kind: ClusterDegradationMonitor
     listKind: ClusterDegradationMonitorList
     plural: clusterdegradationmonitors
+    shortNames:
+    - cdm
     singular: clusterdegradationmonitor
   scope: Cluster
   versions:

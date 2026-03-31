@@ -169,7 +169,7 @@ type RBACDriftMonitorStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Cluster,shortName=rdm
 // +kubebuilder:printcolumn:name="Drift Count",type=integer,JSONPath=`.status.driftCount`
 // +kubebuilder:printcolumn:name="Last Check",type=date,JSONPath=`.status.lastCheckTime`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`

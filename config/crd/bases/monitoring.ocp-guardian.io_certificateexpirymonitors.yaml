@@ -11,6 +11,8 @@ spec:
     kind: CertificateExpiryMonitor
     listKind: CertificateExpiryMonitorList
     plural: certificateexpirymonitors
+    shortNames:
+    - cem
     singular: certificateexpirymonitor
   scope: Cluster
   versions:
