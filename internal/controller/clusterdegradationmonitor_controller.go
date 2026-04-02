@@ -120,7 +120,7 @@ func (r *ClusterDegradationMonitorReconciler) Reconcile(ctx context.Context, req
 		}
 
 		health := monitoringv1alpha1.ClusterOperatorHealth{
-			Name: co.Name,
+			OperatorName: co.Name,
 		}
 
 		// Extract condition states
@@ -185,11 +185,11 @@ func (r *ClusterDegradationMonitorReconciler) Reconcile(ctx context.Context, req
 	// Emit events for state changes
 	if degradedCount > 0 {
 		r.Recorder.Event(monitor, "Warning", "ClusterDegraded",
-			fmt.Sprintf("%d ClusterOperator(s) are degraded", degradedCount))
+			fmt.Sprintf("%d OperatorName(s) are degraded", degradedCount))
 	}
 	if unavailableCount > 0 {
 		r.Recorder.Event(monitor, "Warning", "ClusterUnavailable",
-			fmt.Sprintf("%d ClusterOperator(s) are unavailable", unavailableCount))
+			fmt.Sprintf("%d OperatorName(s) are unavailable", unavailableCount))
 	}
 
 	// Update status
@@ -207,7 +207,7 @@ func (r *ClusterDegradationMonitorReconciler) Reconcile(ctx context.Context, req
 			Type:               conditionTypeClusterDegraded,
 			Status:             metav1.ConditionTrue,
 			Reason:             "OperatorsDegraded",
-			Message:            fmt.Sprintf("%d ClusterOperator(s) are in degraded state", degradedCount),
+			Message:            fmt.Sprintf("%d OperatorName(s) are in degraded state", degradedCount),
 			ObservedGeneration: monitor.Generation,
 		})
 	} else {
@@ -225,7 +225,7 @@ func (r *ClusterDegradationMonitorReconciler) Reconcile(ctx context.Context, req
 			Type:               conditionTypeClusterUnavailable,
 			Status:             metav1.ConditionTrue,
 			Reason:             "OperatorsUnavailable",
-			Message:            fmt.Sprintf("%d ClusterOperator(s) are unavailable", unavailableCount),
+			Message:            fmt.Sprintf("%d OperatorName(s) are unavailable", unavailableCount),
 			ObservedGeneration: monitor.Generation,
 		})
 	} else {
@@ -259,7 +259,7 @@ func (r *ClusterDegradationMonitorReconciler) Reconcile(ctx context.Context, req
 	return ctrl.Result{RequeueAfter: requeueAfter}, nil
 }
 
-// mapClusterOperatorToMonitor maps ClusterOperator events to ClusterDegradationMonitor reconcile requests.
+// mapClusterOperatorToMonitor maps OperatorName events to ClusterDegradationMonitor reconcile requests.
 func (r *ClusterDegradationMonitorReconciler) mapClusterOperatorToMonitor(ctx context.Context, obj client.Object) []reconcile.Request {
 	monitors := &monitoringv1alpha1.ClusterDegradationMonitorList{}
 	if err := r.List(ctx, monitors); err != nil {

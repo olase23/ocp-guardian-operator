@@ -22,7 +22,7 @@ import (
 
 // ClusterDegradationMonitorSpec defines the desired state of ClusterDegradationMonitor.
 type ClusterDegradationMonitorSpec struct {
-	// CheckIntervalMinutes controls how often the controller checks ClusterOperator status.
+	// CheckIntervalMinutes controls how often the controller checks OperatorName status.
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:default=2
 	// +optional
@@ -44,10 +44,10 @@ type ClusterDegradationMonitorSpec struct {
 	Suspend bool `json:"suspend,omitempty"`
 }
 
-// ClusterOperatorHealth describes the health status of a single ClusterOperator.
+// ClusterOperatorHealth describes the health status of a single OperatorName.
 type ClusterOperatorHealth struct {
 	// Name of the ClusterOperator.
-	Name string `json:"name"`
+	OperatorName string `json:"operatorname"`
 	// Available indicates whether the operator is available.
 	Available bool `json:"available"`
 	// Degraded indicates whether the operator is degraded.

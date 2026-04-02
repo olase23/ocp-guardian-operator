@@ -59,7 +59,7 @@ spec:
               checkIntervalMinutes:
                 default: 2
                 description: CheckIntervalMinutes controls how often the controller
-                  checks ClusterOperator status.
+                  checks OperatorName status.
                 format: int32
                 minimum: 1
                 type: integer
@@ -90,7 +90,7 @@ spec:
                   ClusterOperators.
                 items:
                   description: ClusterOperatorHealth describes the health status of
-                    a single ClusterOperator.
+                    a single OperatorName.
                   properties:
                     available:
                       description: Available indicates whether the operator is available.
@@ -106,7 +106,7 @@ spec:
                     message:
                       description: Message provides a human-readable status message.
                       type: string
-                    name:
+                    operatorname:
                       description: Name of the ClusterOperator.
                       type: string
                     progressing:
@@ -120,7 +120,7 @@ spec:
                   required:
                   - available
                   - degraded
-                  - name
+                  - operatorname
                   - progressing
                   type: object
                 type: array
