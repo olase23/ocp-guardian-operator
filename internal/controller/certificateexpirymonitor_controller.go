@@ -109,6 +109,7 @@ func (r *CertificateExpiryMonitorReconciler) Reconcile(ctx context.Context, req 
 	var expiringCerts []monitoringv1alpha1.CertificateInfo
 	var totalScanned int32
 	var expiringCount, expiredCount int32
+	var currentStatus string
 
 	warningDays := monitor.Spec.WarningThresholdDays
 	if warningDays == 0 {
@@ -150,6 +151,7 @@ func (r *CertificateExpiryMonitorReconciler) Reconcile(ctx context.Context, req 
 					"secret", certInfo.SecretName, "subject", certInfo.Subject, "daysUntilExpiry",
 					certInfo.DaysUntilExpiry, "severity", certInfo.Severity)
 				expiringCerts = append(expiringCerts, *certInfo)
+				currentStatus = certInfo.Severity
 				switch certInfo.Severity {
 				case severityExpired:
 					expiredCount++
@@ -163,9 +165,12 @@ func (r *CertificateExpiryMonitorReconciler) Reconcile(ctx context.Context, req 
 
 	// Emit events for expiring/expired certificates
 	for _, cert := range expiringCerts {
-		r.Recorder.Event(monitor, "Warning", "CertificateExpiry",
-			fmt.Sprintf("[%s] Certificate in %s/%s (subject: %s) expires in %d days",
-				cert.Severity, cert.Namespace, cert.SecretName, cert.Subject, cert.DaysUntilExpiry))
+		prevStatus := getPreviousCertStatus(monitor, cert.SecretName)
+		if prevStatus != currentStatus {
+			r.Recorder.Event(monitor, "Warning", "CertificateExpiry",
+				fmt.Sprintf("[%s] Certificate in %s/%s (subject: %s) expires in %d days",
+					cert.Severity, cert.Namespace, cert.SecretName, cert.Subject, cert.DaysUntilExpiry))
+		}
 	}
 
 	// Update status
@@ -228,6 +233,15 @@ func (r *CertificateExpiryMonitorReconciler) Reconcile(ctx context.Context, req 
 	requeueAfter := time.Duration(monitor.Spec.CheckIntervalMinutes) * time.Minute
 	logger.Info("Certificate scan complete", "totalScanned", totalScanned, "expiring", expiringCount, "expired", expiredCount)
 	return ctrl.Result{RequeueAfter: requeueAfter}, nil
+}
+
+func getPreviousCertStatus(monitor *monitoringv1alpha1.CertificateExpiryMonitor, certName string) string {
+	for _, cert := range monitor.Status.ExpiringCertificates {
+		if cert.SecretName == certName {
+			return cert.Severity
+		}
+	}
+	return ""
 }
 
 // getTargetNamespaces returns the list of namespaces to scan based on the selector.

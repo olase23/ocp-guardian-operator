@@ -1,5 +1,5 @@
 # VERSION defines the project version for the bundle.
-VERSION ?= 0.0.6
+VERSION ?= 0.0.9
 
 # Image URL to use all building/pushing targets
 IMG ?= default-route-openshift-image-registry.apps.ocp1.ocp4ivi.site/ocp-guardian/ocp-guardian-operator:$(VERSION)
